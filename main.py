@@ -42,10 +42,6 @@ def main():
                 game_state = "menu"
             elif result == "quit":
                 running = False
-        
-        elif game_state == "playing":
-            # TODO: Gerçek oyun döngüsünü buraya ekle
-            pass
     
     # Temizlik yap ve çık
     pygame.quit()
