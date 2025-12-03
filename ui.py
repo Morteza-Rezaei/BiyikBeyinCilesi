@@ -1,37 +1,10 @@
 """
 Bıyık Bey'in Çilesi - Arayüz Bileşenleri
-Butonlar ve metin çizim yardımcıları gibi yeniden kullanılabilir UI elemanları
+Butonlar gibi yeniden kullanılabilir UI elemanları
 """
 
 import pygame
 from settings import *
-
-
-def draw_text_centered(screen, text, font_size, color, y_position, shadow=True, shadow_color=BLACK):
-    """
-    Belirtilen Y konumunda ortalanmış metin çiz (retro gölge efektli)
-    
-    Parametreler:
-        screen: Çizim yapılacak Pygame yüzeyi
-        text: Görüntülenecek metin
-        font_size: Yazı boyutu
-        color: RGB renk değeri
-        y_position: Metnin Y koordinatı (merkez)
-        shadow: Gölge çizilsin mi
-        shadow_color: Gölge rengi
-    """
-    font = pygame.font.Font(None, font_size)
-    
-    # Gölge çiz
-    if shadow:
-        shadow_surface = font.render(text, True, shadow_color)
-        shadow_rect = shadow_surface.get_rect(center=(screen.get_width() // 2 + 3, y_position + 3))
-        screen.blit(shadow_surface, shadow_rect)
-    
-    # Ana metni çiz
-    text_surface = font.render(text, True, color)
-    text_rect = text_surface.get_rect(center=(screen.get_width() // 2, y_position))
-    screen.blit(text_surface, text_rect)
 
 
 class ImageButton:
