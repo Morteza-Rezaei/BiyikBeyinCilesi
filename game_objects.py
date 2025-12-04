@@ -316,16 +316,16 @@ class HealthUI:
         self.max_health = max_health
         self.current_health = max_health
         
-        # Kalp ikonları
-        heart_scale = 1.0
+        # Kalp ikonları (küçültülmüş)
+        heart_scale = 0.45
         self.heart_full = Assets.load_scaled('assets/game/heart.png', heart_scale)
         self.heart_empty = Assets.load_scaled('assets/game/heart_broken.png', heart_scale)
         
-        # Pozisyon (sol üst köşe)
+        # Pozisyon (sol üst köşe - ESC yazısının altında)
         self.padding = 20
-        self.spacing = 10
+        self.spacing = 5
         self.start_x = self.padding
-        self.start_y = self.padding
+        self.start_y = self.padding + 40  # ESC yazısının altında
         
         # Hasar animasyonu
         self.shake_timer = 0
@@ -383,12 +383,13 @@ class SpawnManager:
         self.bomb_timer = 0
         self.jilet_timer = 0
         self.terlik_timer = 0
+        self.buff_timer = 0
         
         # Zorluk artışı
         self.difficulty = 1.0
         self.difficulty_timer = 0
     
-    def update(self, dt, teas, bombs, jilets, terliks, player_rect):
+    def update(self, dt, teas, bombs, jilets, terliks, player_rect, speed_buffs=None, speed_debuffs=None):
         """Spawn zamanlayıcılarını güncelle ve nesneler oluştur"""
         # Zorluk zamanla artar
         self.difficulty_timer += dt
@@ -423,6 +424,13 @@ class SpawnManager:
             self.terlik_timer = 0
             if len(terliks) < TERLIK_MAX_COUNT:
                 self._spawn_terlik(terliks, player_rect)
+        
+        # Buff/Debuff spawn
+        if speed_buffs is not None and speed_debuffs is not None:
+            self.buff_timer += dt
+            if self.buff_timer >= BUFF_SPAWN_TIME:
+                self.buff_timer = 0
+                self._spawn_buff_or_debuff(speed_buffs, speed_debuffs)
     
     def _spawn_tea(self, teas):
         """Çay oluştur - Rastgele konumda"""
@@ -478,3 +486,84 @@ class SpawnManager:
             player_rect.center,
             TERLIK_SCALE
         ))
+    
+    def _spawn_buff_or_debuff(self, speed_buffs, speed_debuffs):
+        """Rastgele buff veya debuff oluştur"""
+        margin = 150
+        x = random.randint(margin, self.screen_w - margin)
+        y = random.randint(margin, self.screen_h - margin)
+        
+        # %50 buff, %50 debuff
+        if random.random() < 0.5:
+            speed_buffs.append(SpeedBuff(x, y, BUFF_SCALE))
+        else:
+            speed_debuffs.append(SpeedDebuff(x, y, BUFF_SCALE))
+
+
+# =============================================================================
+# SPEED POWERUP - Hız Değiştirici (Buff veya Debuff)
+# =============================================================================
+
+class SpeedPowerup(GameObject):
+    """Hız Değiştirici - Buff veya Debuff olabilir"""
+    
+    def __init__(self, x, y, is_buff=True, scale=1.0):
+        super().__init__(x, y)
+        self.is_buff = is_buff
+        
+        # Görsel yükle
+        image_name = 'speed_buff.png' if is_buff else 'speed_debuff.png'
+        self.image = Assets.load_scaled(f'assets/game/{image_name}', scale)
+        self.rect = self.image.get_rect(center=(x, y))
+        
+        # Konum
+        self.base_x = x
+        self.base_y = y
+        
+        # Yaşam süresi
+        self.lifetime = BUFF_LIFETIME
+        self.age = 0
+        
+        # Animasyon - buff daha hızlı, debuff daha yavaş
+        self.float_offset = random.uniform(0, math.pi * 2)
+        self.float_speed = 3.0 if is_buff else 2.0
+        self.float_amplitude = 8 if is_buff else 6
+        self.pulse_timer = 0
+        self.visible = True
+    
+    def update(self, screen_w, screen_h, player_rect, dt):
+        """Güncelle - Süzülme ve kaybolma animasyonu"""
+        self.age += dt
+        
+        # Süre doldu mu?
+        if self.age >= self.lifetime:
+            return False  # Silinmeli
+        
+        # Yukarı aşağı süzülme
+        elapsed = pygame.time.get_ticks() / 1000.0
+        offset = math.sin(elapsed * self.float_speed + self.float_offset) * self.float_amplitude
+        self.rect.centery = self.base_y + offset
+        
+        # Son 2 saniyede yanıp sönme
+        if self.age >= self.lifetime - 2:
+            self.pulse_timer += dt * 10
+            self.visible = int(self.pulse_timer) % 2 == 0
+        else:
+            self.visible = True
+        
+        return True  # Hala yaşıyor
+    
+    def draw(self, screen):
+        if self.visible:
+            screen.blit(self.image, self.rect)
+
+
+# Geriye uyumluluk için alias'lar
+def SpeedBuff(x, y, scale=1.0):
+    """Hız Artışı - Toplandığında oyuncuyu hızlandırır"""
+    return SpeedPowerup(x, y, is_buff=True, scale=scale)
+
+
+def SpeedDebuff(x, y, scale=1.0):
+    """Hız Azalması - Toplandığında oyuncuyu yavaşlatır"""
+    return SpeedPowerup(x, y, is_buff=False, scale=scale)

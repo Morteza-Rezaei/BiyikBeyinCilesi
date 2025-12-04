@@ -49,6 +49,53 @@ class Assets:
     """Görselleri ve sesleri önbellekte tutar"""
     
     _cache = {}
+    _preloaded = False
+    
+    @classmethod
+    def preload_game_assets(cls, screen_width, screen_height):
+        """Oyun asset'lerini önceden yükle - kasma önleme"""
+        if cls._preloaded:
+            return
+        
+        # Oyuncu animasyonları
+        scale = 1.3
+        cls.load_scaled('assets/player/idle_stand.png', scale)
+        for dir in ['down', 'up', 'left', 'right']:
+            cls.load_scaled(f'assets/player/walk_{dir}_1.png', scale)
+            cls.load_scaled(f'assets/player/walk_{dir}_2.png', scale)
+        
+        # Oyun arka planı
+        cls.load_image('assets/game_bg.png', (screen_width, screen_height))
+        
+        # Çay
+        cls.load_scaled('assets/game/tea.png', 1.2)
+        
+        # Bomba animasyonları
+        for i in range(1, 8):
+            cls.load_scaled(f'assets/game/bomb_tick_{i}.png', 1.3)
+        for i in range(1, 6):
+            cls.load_scaled(f'assets/game/explosion_{i}.png', 1.3 * 2)
+        
+        # Jilet animasyonları
+        for i in range(1, 9):
+            cls.load_scaled(f'assets/game/sinsi_jilet_{i}.png', 1.2)
+        
+        # Terlik animasyonları
+        for i in range(1, 9):
+            cls.load_scaled(f'assets/game/ucan_terlik_{i}.png', 1.0)
+        
+        # Buff/Debuff
+        cls.load_scaled('assets/game/speed_buff.png', 1.0)
+        cls.load_scaled('assets/game/speed_debuff.png', 1.0)
+        cls.load_scaled('assets/game/speed_buff.png', 0.6)
+        cls.load_scaled('assets/game/speed_debuff.png', 0.6)
+        
+        # Can göstergesi (küçültülmüş)
+        cls.load_scaled('assets/game/heart.png', 0.45)
+        cls.load_scaled('assets/game/heart_broken.png', 0.45)
+        
+        cls._preloaded = True
+        print("Oyun asset'leri önceden yüklendi!")
     
     @classmethod
     def load_image(cls, path, size=None):

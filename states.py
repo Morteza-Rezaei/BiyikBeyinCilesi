@@ -5,7 +5,7 @@ Menü, oyun ve diğer ekranlar
 
 import pygame
 from engine import GameState, Assets, Audio
-from ui import ImageButton, VolumeControl
+from ui import ImageButton, VolumeControl, HintButton, HintPopup, PauseMenu
 from settings import *
 
 
@@ -22,6 +22,9 @@ class MenuState(GameState):
         self._calculate_layout()
         self._create_buttons()
         self._create_volume_control()
+        
+        # Oyun asset'lerini arka planda önceden yükle (kasma önleme)
+        Assets.preload_game_assets(self.screen_width, self.screen_height)
     
     def enter(self):
         """Menüye girildiğinde müziği başlat"""
@@ -37,7 +40,7 @@ class MenuState(GameState):
     def _load_assets(self):
         """Görselleri yükle"""
         self.background = Assets.load_image(
-            'assets/Forest.png',
+            'assets/home_bg.jpg',
             (self.screen_width, self.screen_height)
         )
         
@@ -105,9 +108,8 @@ class MenuState(GameState):
         if self.quit_btn.handle_event(event):
             self.engine.quit()
         
-        new_vol = self.volume.handle_event(event)
-        if new_vol is not None:
-            pygame.mixer.music.set_volume(new_vol)
+        # Ses kontrolü (Audio.cycle_volume zaten müzik sesini ayarlıyor)
+        self.volume.handle_event(event)
     
     def draw(self, screen):
         """Menüyü çiz"""
@@ -144,10 +146,18 @@ class PlayingState(GameState):
         self._create_player()
         self._init_game_objects()
     
+    def enter(self):
+        """Oyuna girildiğinde müziği başlat"""
+        Audio.play_music('assets/music/game_music.mp3')
+    
+    def exit(self):
+        """Oyundan çıkıldığında müziği durdur"""
+        Audio.stop()
+    
     def _load_assets(self):
         """Görselleri yükle"""
         self.background = Assets.load_image(
-            'assets/Forest.png',
+            'assets/game_bg.png',
             (self.screen_width, self.screen_height)
         )
     
@@ -167,19 +177,53 @@ class PlayingState(GameState):
         self.jilets = pygame.sprite.Group()
         self.terliks = pygame.sprite.Group()
         
+        # Buff/Debuff listeleri
+        self.speed_buffs = []
+        self.speed_debuffs = []
+        
         # Spawn yöneticisi
         self.spawn_manager = SpawnManager(self.screen_width, self.screen_height)
         
         # Can UI
         self.health_ui = HealthUI(self.screen_width, self.screen_height)
+        
+        # Hint sistemi
+        self.hint_button = HintButton(self.screen_width, self.screen_height)
+        self.hint_popup = HintPopup(self.screen_width, self.screen_height)
+        
+        # Pause menüsü
+        self.pause_menu = PauseMenu(self.screen_width, self.screen_height)
     
     def handle_event(self, event):
         """Olayları işle"""
+        # Pause menüsü açıksa önce onu işle
+        if self.pause_menu.is_open:
+            result = self.pause_menu.handle_event(event)
+            if result == 'quit':
+                self.engine.change_state(MenuState(self.engine))
+            return  # Pause açıkken diğer eventleri işleme
+        
+        # Hint popup açıksa önce onu işle
+        if self.hint_popup.is_open:
+            result = self.hint_popup.handle_event(event)
+            return  # Popup açıkken diğer eventleri işleme
+        
+        # ESC ile pause menüsünü aç
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.engine.change_state(MenuState(self.engine))
+            self.pause_menu.open()
+            return
+        
+        # Hint butonuna tıklandı mı?
+        if self.hint_button.handle_event(event):
+            self.hint_popup.open()
+            return
     
     def update(self, dt):
         """Güncelle"""
+        # Pause menüsü veya hint popup açıksa oyunu durdur
+        if self.pause_menu.is_open or self.hint_popup.is_open:
+            return
+        
         # Oyuncu öldüyse menüye dön
         if self.player.is_dead():
             self.engine.change_state(MenuState(self.engine))
@@ -195,7 +239,9 @@ class PlayingState(GameState):
             self.bombs, 
             self.jilets, 
             self.terliks,
-            self.player.rect
+            self.player.rect,
+            self.speed_buffs,
+            self.speed_debuffs
         )
         
         # Nesneleri güncelle
@@ -216,6 +262,16 @@ class PlayingState(GameState):
             terlik.update(self.screen_width, self.screen_height, player_rect)
             if terlik.is_off_screen():
                 self.terliks.remove(terlik)
+        
+        # Speed Buff'ları güncelle
+        for buff in self.speed_buffs[:]:
+            if not buff.update(self.screen_width, self.screen_height, player_rect, dt):
+                self.speed_buffs.remove(buff)
+        
+        # Speed Debuff'ları güncelle
+        for debuff in self.speed_debuffs[:]:
+            if not debuff.update(self.screen_width, self.screen_height, player_rect, dt):
+                self.speed_debuffs.remove(debuff)
         
         # Çarpışma kontrolü
         self._check_collisions()
@@ -256,6 +312,18 @@ class PlayingState(GameState):
                 if self.player.take_damage(1):
                     self.health_ui.set_health(self.player.health)
                     self.terliks.remove(terlik)
+        
+        # Speed Buff toplama
+        for buff in self.speed_buffs[:]:
+            if player_rect.colliderect(buff.rect):
+                self.player.apply_speed_buff()
+                self.speed_buffs.remove(buff)
+        
+        # Speed Debuff toplama
+        for debuff in self.speed_debuffs[:]:
+            if player_rect.colliderect(debuff.rect):
+                self.player.apply_speed_debuff()
+                self.speed_debuffs.remove(debuff)
     
     def draw(self, screen):
         """Çiz"""
@@ -268,6 +336,14 @@ class PlayingState(GameState):
         # Bombaları çiz
         for bomb in self.bombs:
             bomb.draw(screen)
+        
+        # Speed Buff'ları çiz
+        for buff in self.speed_buffs:
+            buff.draw(screen)
+        
+        # Speed Debuff'ları çiz
+        for debuff in self.speed_debuffs:
+            debuff.draw(screen)
         
         # Jileti çiz
         for jilet in self.jilets:
@@ -283,9 +359,57 @@ class PlayingState(GameState):
         # Can UI
         self.health_ui.draw(screen)
         
-        # ESC ipucu
-        font = Assets.get_font(32)
-        shadow = font.render("ESC - Menüye Dön", True, BLACK)
-        text = font.render("ESC - Menüye Dön", True, WHITE)
-        screen.blit(shadow, (22, 22 + 60))
-        screen.blit(text, (20, 20 + 60))
+        # Buff/Debuff göstergesi (sağ üst köşe)
+        self._draw_buff_indicator(screen)
+        
+        # ESC ipucu (üstte)
+        font = Assets.get_font(28)
+        shadow = font.render("ESC - Duraklat", True, BLACK)
+        text = font.render("ESC - Duraklat", True, WHITE)
+        screen.blit(shadow, (22, 22))
+        screen.blit(text, (20, 20))
+        
+        # Hint butonu
+        self.hint_button.draw(screen)
+        
+        # Hint popup (en üstte çizilmeli)
+        self.hint_popup.draw(screen)
+        
+        # Pause menüsü (en üstte)
+        self.pause_menu.draw(screen)
+    
+    def _draw_buff_indicator(self, screen):
+        """Aktif buff/debuff göstergesi çiz"""
+        if self.player.has_active_buff():
+            # Yeşil hız göstergesi
+            icon = Assets.load_scaled('assets/game/speed_buff.png', 0.6)
+            icon_x = self.screen_width - icon.get_width() - 20
+            icon_y = 20
+            screen.blit(icon, (icon_x, icon_y))
+            
+            # Kalan süre çubuğu
+            bar_width = icon.get_width()
+            bar_height = 8
+            bar_x = icon_x
+            bar_y = icon_y + icon.get_height() + 5
+            
+            remaining = self.player.speed_buff_timer / self.player.buff_duration
+            pygame.draw.rect(screen, DARK_GRAY, (bar_x, bar_y, bar_width, bar_height))
+            pygame.draw.rect(screen, GREEN, (bar_x, bar_y, int(bar_width * remaining), bar_height))
+        
+        elif self.player.has_active_debuff():
+            # Kırmızı yavaşlık göstergesi
+            icon = Assets.load_scaled('assets/game/speed_debuff.png', 0.6)
+            icon_x = self.screen_width - icon.get_width() - 20
+            icon_y = 20
+            screen.blit(icon, (icon_x, icon_y))
+            
+            # Kalan süre çubuğu
+            bar_width = icon.get_width()
+            bar_height = 8
+            bar_x = icon_x
+            bar_y = icon_y + icon.get_height() + 5
+            
+            remaining = self.player.speed_debuff_timer / self.player.buff_duration
+            pygame.draw.rect(screen, DARK_GRAY, (bar_x, bar_y, bar_width, bar_height))
+            pygame.draw.rect(screen, RED, (bar_x, bar_y, int(bar_width * remaining), bar_height))

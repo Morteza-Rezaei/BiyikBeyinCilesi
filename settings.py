@@ -63,6 +63,25 @@ TERLIK_MAX_COUNT = 5            # Aynı anda maksimum terlik sayısı
 TERLIK_SCALE = 1.0              # Terlik boyutu
 TERLIK_SPEED = 7.0              # Terlik hızı
 
+# =============================================================================
+# BUFF / DEBUFF AYARLARI
+# =============================================================================
+BUFF_SPAWN_TIME = 5.0           # Buff/Debuff spawn süresi (saniye)
+BUFF_LIFETIME = 5.0             # Buff/Debuff haritada kalma süresi (saniye)
+BUFF_EFFECT_DURATION = 5.0      # Buff/Debuff efekt süresi (saniye)
+BUFF_SCALE = 1.0                # Buff/Debuff boyutu
+SPEED_BUFF_MULTIPLIER = 1.5     # Hız artış çarpanı (%50 hız artışı)
+SPEED_DEBUFF_MULTIPLIER = 0.5   # Hız azalma çarpanı (%50 hız azalması)
+
+# =============================================================================
+# HINT SİSTEMİ AYARLARI
+# =============================================================================
+HINT_BUTTON_SIZE = 140           # Hint butonu boyutu (piksel)
+HINT_BUTTON_PADDING_RIGHT = 20   # Hint butonu sağ kenardan mesafe
+HINT_BUTTON_PADDING_TOP = 20    # Hint butonu üst kenardan mesafe
+HINT_POPUP_BTN_SIZE = 100        # Popup içi butonlar (next, close) boyutu
+HINT_CARD_HEIGHT_RATIO = 0.5  # Kart yüksekliği (ekranın yüzde kaçı)
+
 
 # Not: Ekran boyutları (SCREEN_WIDTH, SCREEN_HEIGHT) main.py'de
 # ekran çözünürlüğüne göre dinamik olarak belirlenir

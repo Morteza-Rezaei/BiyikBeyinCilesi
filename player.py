@@ -5,7 +5,8 @@ WASD ile hareket eden ana karakter
 
 import pygame
 from engine import Assets
-from settings import PLAYER_MAX_HEALTH, PLAYER_START_HEALTH, PLAYER_INVINCIBILITY_TIME
+from settings import (PLAYER_MAX_HEALTH, PLAYER_START_HEALTH, PLAYER_INVINCIBILITY_TIME,
+                      BUFF_EFFECT_DURATION, SPEED_BUFF_MULTIPLIER, SPEED_DEBUFF_MULTIPLIER)
 
 
 class Player(pygame.sprite.Sprite):
@@ -14,7 +15,8 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         
-        self.speed = 10
+        self.base_speed = 10
+        self.speed = self.base_speed
         self.direction = pygame.math.Vector2(0, 0)
         self.facing = 'down'
         self.is_moving = False
@@ -29,6 +31,11 @@ class Player(pygame.sprite.Sprite):
         self.invincible_duration = PLAYER_INVINCIBILITY_TIME
         self.blink_timer = 0
         self.visible = True
+        
+        # Buff/Debuff sistemi
+        self.speed_buff_timer = 0
+        self.speed_debuff_timer = 0
+        self.buff_duration = BUFF_EFFECT_DURATION
         
         # Animasyon
         self.anim_speed = 0.15
@@ -72,12 +79,53 @@ class Player(pygame.sprite.Sprite):
         """Öldü mü?"""
         return self.health <= 0
     
+    def apply_speed_buff(self):
+        """Hız artışı uygula"""
+        self.speed_buff_timer = self.buff_duration
+        self.speed_debuff_timer = 0  # Debuff'ı iptal et
+        self.speed = self.base_speed * SPEED_BUFF_MULTIPLIER
+    
+    def apply_speed_debuff(self):
+        """Hız azalması uygula"""
+        self.speed_debuff_timer = self.buff_duration
+        self.speed_buff_timer = 0  # Buff'ı iptal et
+        self.speed = self.base_speed * SPEED_DEBUFF_MULTIPLIER
+    
+    def has_active_buff(self):
+        """Aktif buff var mı?"""
+        return self.speed_buff_timer > 0
+    
+    def has_active_debuff(self):
+        """Aktif debuff var mı?"""
+        return self.speed_debuff_timer > 0
+    
+    def get_buff_remaining_time(self):
+        """Kalan buff/debuff süresi"""
+        if self.speed_buff_timer > 0:
+            return self.speed_buff_timer
+        elif self.speed_debuff_timer > 0:
+            return self.speed_debuff_timer
+        return 0
+    
     def update(self, screen_w, screen_h, dt=1/60):
         """Her frame güncelle"""
         self._handle_input()
         self._move(screen_w, screen_h)
         self._animate()
         self._update_invincibility(dt)
+        self._update_buffs(dt)
+    
+    def _update_buffs(self, dt):
+        """Buff/Debuff süresini güncelle"""
+        if self.speed_buff_timer > 0:
+            self.speed_buff_timer -= dt
+            if self.speed_buff_timer <= 0:
+                self.speed = self.base_speed
+        
+        if self.speed_debuff_timer > 0:
+            self.speed_debuff_timer -= dt
+            if self.speed_debuff_timer <= 0:
+                self.speed = self.base_speed
     
     def _update_invincibility(self, dt):
         """Dokunulmazlık süresini güncelle"""
