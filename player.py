@@ -4,9 +4,10 @@ WASD ile hareket eden ana karakter
 """
 
 import pygame
-from engine import Assets
+from engine import Assets, Audio
 from settings import (PLAYER_MAX_HEALTH, PLAYER_START_HEALTH, PLAYER_INVINCIBILITY_TIME,
-                      BUFF_EFFECT_DURATION, SPEED_BUFF_MULTIPLIER, SPEED_DEBUFF_MULTIPLIER)
+                      BUFF_EFFECT_DURATION, SPEED_BUFF_MULTIPLIER, SPEED_DEBUFF_MULTIPLIER,
+                      PLAYER_COLLISION_SHRINK)
 
 
 class Player(pygame.sprite.Sprite):
@@ -81,15 +82,27 @@ class Player(pygame.sprite.Sprite):
     
     def apply_speed_buff(self):
         """Hız artışı uygula"""
+        # Önceki debuff loop sesini durdur
+        Audio.stop_sound_loop('debuff_speed_loop')
+        
         self.speed_buff_timer = self.buff_duration
         self.speed_debuff_timer = 0  # Debuff'ı iptal et
         self.speed = self.base_speed * SPEED_BUFF_MULTIPLIER
+        
+        # Loop sesi başlat (eğer dosya varsa)
+        Audio.play_sound_loop('buff_speed_loop')
     
     def apply_speed_debuff(self):
         """Hız azalması uygula"""
+        # Önceki buff loop sesini durdur
+        Audio.stop_sound_loop('buff_speed_loop')
+        
         self.speed_debuff_timer = self.buff_duration
         self.speed_buff_timer = 0  # Buff'ı iptal et
         self.speed = self.base_speed * SPEED_DEBUFF_MULTIPLIER
+        
+        # Loop sesi başlat (eğer dosya varsa)
+        Audio.play_sound_loop('debuff_speed_loop')
     
     def has_active_buff(self):
         """Aktif buff var mı?"""
@@ -121,11 +134,15 @@ class Player(pygame.sprite.Sprite):
             self.speed_buff_timer -= dt
             if self.speed_buff_timer <= 0:
                 self.speed = self.base_speed
+                # Loop sesini durdur
+                Audio.stop_sound_loop('buff_speed_loop')
         
         if self.speed_debuff_timer > 0:
             self.speed_debuff_timer -= dt
             if self.speed_debuff_timer <= 0:
                 self.speed = self.base_speed
+                # Loop sesini durdur
+                Audio.stop_sound_loop('debuff_speed_loop')
     
     def _update_invincibility(self, dt):
         """Dokunulmazlık süresini güncelle"""
@@ -197,5 +214,5 @@ class Player(pygame.sprite.Sprite):
     def get_collision_rect(self):
         """Çarpışma için daha küçük bir rect döndür"""
         # Karakterin ayak bölgesi için daha küçük rect
-        shrink = 20
-        return self.rect.inflate(-shrink, -shrink)
+        from settings import PLAYER_COLLISION_SHRINK
+        return self.rect.inflate(-PLAYER_COLLISION_SHRINK, -PLAYER_COLLISION_SHRINK)

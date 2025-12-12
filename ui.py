@@ -4,6 +4,7 @@ Butonlar gibi yeniden kullanılabilir UI elemanları
 """
 
 import pygame
+from engine import Audio
 from settings import *
 
 
@@ -58,6 +59,8 @@ class ImageButton:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if self.rect.collidepoint(event.pos):
+                    # Buton tıklama sesi
+                    Audio.play_sound('button_click')
                     return True
         
         return False
@@ -74,7 +77,6 @@ class VolumeControl:
             screen_width: Ekran genişliği
             screen_height: Ekran yüksekliği
         """
-        from engine import Audio
         self.Audio = Audio  # Audio sınıfına referans
         
         self.volume_levels = VOLUME_LEVELS
@@ -156,6 +158,7 @@ class VolumeControl:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Sol tık
                 if self.rect.collidepoint(event.pos):
+                    Audio.play_sound('button_click')
                     return self.cycle_volume()
         
         return None
@@ -312,6 +315,8 @@ class HintButton:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if self.rect.collidepoint(event.pos):
+                    # Buton tıklama sesi
+                    Audio.play_sound('button_click')
                     return True
         
         return False
@@ -477,18 +482,176 @@ class HintPopup:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if self.next_rect.collidepoint(event.pos):
+                    Audio.play_sound('button_click')
                     self.next_hint()
                     return 'next'
                 elif self.close_rect.collidepoint(event.pos):
+                    Audio.play_sound('button_click')
                     self.close()
                     return 'close'
         
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
+                Audio.play_sound('button_click')
                 self.close()
                 return 'close'
             elif event.key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_RIGHT):
+                Audio.play_sound('button_click')
                 self.next_hint()
                 return 'next'
+        
+        return None
+
+
+# =============================================================================
+# LEVEL SELECTOR - Level Seçim Dialogu
+# =============================================================================
+
+class LevelSelector:
+    """Level seçim popup'ı - Hangi leveldan başlanacağını seç"""
+    
+    def __init__(self, screen_width, screen_height):
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.is_open = False
+        
+        # Level girişi
+        self.level_input = ""
+        self.input_rect = pygame.Rect(0, 0, 200, 50)
+        self.input_rect.center = (screen_width // 2, screen_height // 2 - 50)
+        
+        # Butonlar
+        btn_width = 150
+        btn_height = 50
+        btn_y = screen_height // 2 + 50
+        
+        self.ok_rect = pygame.Rect(screen_width // 2 - 160, btn_y, btn_width, btn_height)
+        self.cancel_rect = pygame.Rect(screen_width // 2 + 10, btn_y, btn_width, btn_height)
+        
+        self.ok_hovered = False
+        self.cancel_hovered = False
+        
+        # Font
+        self.font = pygame.font.Font(None, 36)
+        self.label_font = pygame.font.Font(None, 28)
+    
+    def open(self, current_level=1):
+        """Dialog'u aç"""
+        self.is_open = True
+        self.level_input = ""  # Boş başlat
+    
+    def close(self):
+        """Dialog'u kapat"""
+        self.is_open = False
+        self.level_input = ""
+    
+    def draw(self, screen):
+        """Dialog'u çiz"""
+        if not self.is_open:
+            return
+        
+        # Karanlık overlay
+        overlay = pygame.Surface((self.screen_width, self.screen_height))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(150)
+        screen.blit(overlay, (0, 0))
+        
+        # Dialog kutusu
+        dialog_width = 400
+        dialog_height = 280
+        dialog_rect = pygame.Rect(0, 0, dialog_width, dialog_height)
+        dialog_rect.center = (self.screen_width // 2, self.screen_height // 2)
+        
+        pygame.draw.rect(screen, (50, 50, 50), dialog_rect)
+        pygame.draw.rect(screen, (200, 200, 200), dialog_rect, 3)
+        
+        # Başlık
+        title = self.label_font.render("Hangi leveldan başlayalım?", True, WHITE)
+        title_rect = title.get_rect(center=(self.screen_width // 2, dialog_rect.top + 30))
+        screen.blit(title, title_rect)
+        
+        # Input kutusu
+        pygame.draw.rect(screen, WHITE, self.input_rect)
+        pygame.draw.rect(screen, (0, 0, 0), self.input_rect, 2)
+        
+        # Boş olduğunda boş göster, değilse girilen değeri göster
+        input_text = self.font.render(self.level_input, True, BLACK)
+        screen.blit(input_text, (self.input_rect.x + 10, self.input_rect.y + 8))
+        
+        # OK butonu
+        btn_color = (100, 200, 100) if self.ok_hovered else (70, 170, 70)
+        pygame.draw.rect(screen, btn_color, self.ok_rect)
+        pygame.draw.rect(screen, WHITE, self.ok_rect, 2)
+        ok_text = self.label_font.render("BAŞLA", True, WHITE)
+        ok_text_rect = ok_text.get_rect(center=self.ok_rect.center)
+        screen.blit(ok_text, ok_text_rect)
+        
+        # Cancel butonu
+        btn_color = (200, 100, 100) if self.cancel_hovered else (170, 70, 70)
+        pygame.draw.rect(screen, btn_color, self.cancel_rect)
+        pygame.draw.rect(screen, WHITE, self.cancel_rect, 2)
+        cancel_text = self.label_font.render("İPTAL", True, WHITE)
+        cancel_text_rect = cancel_text.get_rect(center=self.cancel_rect.center)
+        screen.blit(cancel_text, cancel_text_rect)
+    
+    def handle_event(self, event):
+        """
+        Olayları işle
+        
+        Döndürür:
+            ('start', level) - Girilen levelle oyunu başlat
+            'cancel' - Dialog'u kapat
+            None - Hiçbir şey olmadı
+        """
+        if not self.is_open:
+            return None
+        
+        if event.type == pygame.MOUSEMOTION:
+            self.ok_hovered = self.ok_rect.collidepoint(event.pos)
+            self.cancel_hovered = self.cancel_rect.collidepoint(event.pos)
+        
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if self.ok_rect.collidepoint(event.pos):
+                    # Boş olduğunda başlatma
+                    if not self.level_input:
+                        return None
+                    Audio.play_sound('button_click')
+                    try:
+                        level = int(self.level_input)
+                        if level < 1:
+                            level = 1
+                        self.close()
+                        return ('start', level)
+                    except ValueError:
+                        self.level_input = ""  # Geçersiz input, temizle
+                elif self.cancel_rect.collidepoint(event.pos):
+                    Audio.play_sound('button_click')
+                    self.close()
+                    return 'cancel'
+        
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                Audio.play_sound('button_click')
+                self.close()
+                return 'cancel'
+            elif event.key == pygame.K_RETURN:
+                # Boş olduğunda başlatma
+                if not self.level_input:
+                    return None
+                Audio.play_sound('button_click')
+                try:
+                    level = int(self.level_input)
+                    if level < 1:
+                        level = 1
+                    self.close()
+                    return ('start', level)
+                except ValueError:
+                    self.level_input = ""
+            elif event.key == pygame.K_BACKSPACE:
+                self.level_input = self.level_input[:-1]
+            elif event.unicode.isdigit() and len(self.level_input) < 4:
+                # Max 4 digit (9999)
+                self.level_input += event.unicode
         
         return None

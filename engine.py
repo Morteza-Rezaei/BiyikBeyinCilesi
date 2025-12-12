@@ -158,11 +158,33 @@ class Audio:
     _music_state = None
     MUSIC_END = pygame.USEREVENT + 1
     
+    # Ses efektleri cache'i
+    _sound_cache = {}
+    _loop_sounds = {}  # Sürekli çalan sesler için
+    
+    # Ses dosyası yolları
+    SOUND_PATHS = {
+        'button_click': 'assets/music/button_click.mp3',
+        'bomb_explosion': 'assets/music/bomb_explosion.mp3',
+        'jilet_hit': 'assets/music/jilet_hit.mp3',
+        'terlik_hit': 'assets/music/terlik_hit.mp3',
+        'buff_tea': 'assets/music/buff_tea.mp3',
+        'buff_speed_apply': 'assets/music/buff_speed_apply.mp3',
+        'debuff_speed_apply': 'assets/music/debuff_speed_apply.mp3',
+        'level_complete': 'assets/music/level_complete.mp3',
+        'game_over': 'assets/music/game_over.mp3',
+        # Loop sesleri (opsiyonel - dosya yoksa sessizce atlanır)
+        'buff_speed_loop': 'assets/music/buff_speed_loop.mp3',
+        'debuff_speed_loop': 'assets/music/debuff_speed_loop.mp3',
+    }
+    
     @classmethod
     def init(cls):
         """Ses sistemini başlat"""
         pygame.mixer.init()
         pygame.mixer.music.set_endevent(cls.MUSIC_END)
+        # Ses efektleri için yeterli kanal ayarla
+        pygame.mixer.set_num_channels(16)
     
     @classmethod
     def get_volume(cls):
@@ -173,8 +195,76 @@ class Audio:
     def cycle_volume(cls):
         """Ses seviyesini değiştir (döngüsel)"""
         cls._volume_index = (cls._volume_index + 1) % len(VOLUME_LEVELS)
-        pygame.mixer.music.set_volume(cls.get_volume())
-        return cls.get_volume()
+        volume = cls.get_volume()
+        pygame.mixer.music.set_volume(volume)
+        # Tüm ses efektlerinin ses seviyesini güncelle
+        for sound in cls._sound_cache.values():
+            if sound:
+                sound.set_volume(volume)
+        return volume
+    
+    @classmethod
+    def _load_sound(cls, sound_name):
+        """Ses efektini yükle ve cache'le"""
+        if sound_name not in cls._sound_cache:
+            if sound_name in cls.SOUND_PATHS:
+                import os
+                sound_path = cls.SOUND_PATHS[sound_name]
+                # Dosya yoksa sessizce None döndür (opsiyonel sesler için)
+                if not os.path.exists(sound_path):
+                    cls._sound_cache[sound_name] = None
+                    return None
+                try:
+                    sound = pygame.mixer.Sound(sound_path)
+                    sound.set_volume(cls.get_volume())
+                    cls._sound_cache[sound_name] = sound
+                except Exception as e:
+                    print(f"Ses yüklenemedi: {sound_name} - {e}")
+                    cls._sound_cache[sound_name] = None
+            else:
+                print(f"Bilinmeyen ses: {sound_name}")
+                cls._sound_cache[sound_name] = None
+        return cls._sound_cache[sound_name]
+    
+    @classmethod
+    def play_sound(cls, sound_name):
+        """Tek seferlik ses çal"""
+        sound = cls._load_sound(sound_name)
+        if sound:
+            try:
+                sound.play()
+            except Exception as e:
+                print(f"Ses çalınamadı: {sound_name} - {e}")
+    
+    @classmethod
+    def play_sound_loop(cls, sound_name):
+        """Sürekli çalan ses başlat"""
+        sound = cls._load_sound(sound_name)
+        if sound:
+            try:
+                # Eğer zaten çalıyorsa durdur
+                if sound_name in cls._loop_sounds:
+                    cls.stop_sound_loop(sound_name)
+                # Yeni kanalda çal
+                channel = sound.play(loops=-1)
+                cls._loop_sounds[sound_name] = channel
+            except Exception as e:
+                print(f"Loop ses çalınamadı: {sound_name} - {e}")
+    
+    @classmethod
+    def stop_sound_loop(cls, sound_name):
+        """Sürekli çalan sesi durdur"""
+        if sound_name in cls._loop_sounds:
+            channel = cls._loop_sounds[sound_name]
+            if channel:
+                channel.stop()
+            del cls._loop_sounds[sound_name]
+    
+    @classmethod
+    def stop_all_sounds(cls):
+        """Tüm ses efektlerini durdur"""
+        for sound_name in list(cls._loop_sounds.keys()):
+            cls.stop_sound_loop(sound_name)
     
     @classmethod
     def play_music(cls, path, loops=-1):
@@ -209,6 +299,7 @@ class Audio:
         """Müziği durdur"""
         pygame.mixer.music.stop()
         cls._music_state = None
+        cls.stop_all_sounds()
 
 
 # =============================================================================
