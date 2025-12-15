@@ -1,3 +1,6 @@
+
+
+
 # Bıyık Bey'in Çilesi 🎮
 
 **2D Arcade Survivor Oyunu**
@@ -6,19 +9,33 @@ Bıyık Bey'in Çilesi, pygame kütüphanesi kullanılarak geliştirilmiş bir 2
 
 ---
 
-## 📋 İçindekiler
 
-- [Özellikler](#özellikler)
-- [Gereksinimler](#gereksinimler)
-- [Kurulum](#kurulum)
-- [Kullanım](#kullanım)
-- [Oyun Mekanikleri](#oyun-mekanikleri)
-- [Kontroller](#kontroller)
-- [Proje Yapısı](#proje-yapısı)
-- [Teknik Detaylar](#teknik-detaylar)
+# 👨‍💻 Geliştirici
+
+- **Morteza Rezaeı**
+
+Proje, pygame kütüphanesi kullanılarak geliştirilmiştir.
+
+Tanıtım videosu (2 dakika): [https://youtu.be/M1T_XHGh2f4](https://youtu.be/M1T_XHGh2f4)
 
 ---
 
+## 📋 İçindekiler
+
+- [Özellikler](#ozellikler)
+- [Gereksinimler](#gereksinimler)
+- [Kurulum](#kurulum)
+- [Kullanım](#kullanim)
+- [Oyun Mekanikleri](#oyun-mekanikleri)
+- [Kontroller](#kontroller)
+- [Proje Yapısı](#proje-yapisi)
+- [Teknik Detaylar](#teknik-detaylar)
+
+
+---
+
+
+<a name="ozellikler"></a>
 ## ✨ Özellikler
 
 ### Oyun Özellikleri
@@ -52,6 +69,8 @@ Bıyık Bey'in Çilesi, pygame kütüphanesi kullanılarak geliştirilmiş bir 2
 
 ---
 
+
+<a name="gereksinimler"></a>
 ## 🔧 Gereksinimler
 
 ### Sistem Gereksinimleri
@@ -64,16 +83,21 @@ Bıyık Bey'in Çilesi, pygame kütüphanesi kullanılarak geliştirilmiş bir 2
 
 ---
 
+
+<a name="kurulum"></a>
 ## 📦 Kurulum
+
 
 ### 1. Projeyi İndirin
 
 Projeyi bilgisayarınıza indirin veya klonlayın:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Morteza-Rezaei/BiyikBeyinCilesi
 cd BiyikBeyinCilesi
 ```
+
+GitHub Proje Linki: [https://github.com/Morteza-Rezaei/BiyikBeyinCilesi](https://github.com/Morteza-Rezaei/BiyikBeyinCilesi)
 
 ### 2. Python Kurulumu
 
@@ -136,6 +160,8 @@ Oyun tam ekran modunda açılacaktır.
 
 ---
 
+
+<a name="kullanim"></a>
 ## 🎮 Kullanım
 
 ### Oyunu Başlatma
@@ -154,6 +180,8 @@ Oyun tam ekran modunda açılacaktır.
 
 ---
 
+
+<a name="oyun-mekanikleri"></a>
 ## 🎯 Oyun Mekanikleri
 
 ### Level Sistemi
@@ -221,6 +249,8 @@ Oyun tam ekran modunda açılacaktır.
 
 ---
 
+
+<a name="kontroller"></a>
 ## ⌨️ Kontroller
 
 ### Ana Menü
@@ -254,6 +284,8 @@ Oyun tam ekran modunda açılacaktır.
 
 ---
 
+
+<a name="proje-yapisi"></a>
 ## 📁 Proje Yapısı
 
 ```
@@ -337,6 +369,8 @@ BiyikBeyinCilesi/
 
 ---
 
+
+<a name="teknik-detaylar"></a>
 ## 🔧 Teknik Detaylar
 
 ### Oyun Motoru
@@ -404,9 +438,14 @@ Bu proje eğitim amaçlı geliştirilmiştir.
 
 ---
 
+
 ## 👨‍💻 Geliştirici
 
+- **Morteza Rezaeı**
+
 Proje, pygame kütüphanesi kullanılarak geliştirilmiştir.
+
+Tanıtım videosu (2 dakika): [https://youtu.be/M1T_XHGh2f4](https://youtu.be/M1T_XHGh2f4)
 
 **Not**: Bu README dosyası projeyi sunmak için hazırlanmıştır. Tüm kurulum adımları ve kullanım talimatları detaylı olarak açıklanmıştır.
 
