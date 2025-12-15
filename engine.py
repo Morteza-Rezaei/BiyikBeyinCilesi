@@ -161,6 +161,19 @@ class Audio:
     # Ses efektleri cache'i
     _sound_cache = {}
     _loop_sounds = {}  # Sürekli çalan sesler için
+    _active_sound_channels = {}  # Çalan seslerin kanallarını takip et
+    
+    # Çakışmaması gereken sesler (aynı anda sadece bir örnek çalabilir)
+    NON_OVERLAPPING_SOUNDS = {
+        'button_click',
+        'jilet_hit',
+        'terlik_hit',
+        'buff_tea',
+        'buff_speed_apply',
+        'debuff_speed_apply',
+        'level_complete',
+        'game_over',
+    }
     
     # Ses dosyası yolları
     SOUND_PATHS = {
@@ -227,12 +240,38 @@ class Audio:
         return cls._sound_cache[sound_name]
     
     @classmethod
+    def _cleanup_finished_channels(cls):
+        """Tamamlanan ses kanallarını temizle"""
+        finished = []
+        for sound_name, channel in cls._active_sound_channels.items():
+            if channel is None or not channel.get_busy():
+                finished.append(sound_name)
+        for sound_name in finished:
+            del cls._active_sound_channels[sound_name]
+    
+    @classmethod
     def play_sound(cls, sound_name):
-        """Tek seferlik ses çal"""
+        """Tek seferlik ses çal - çakışmayı önle"""
         sound = cls._load_sound(sound_name)
         if sound:
             try:
-                sound.play()
+                # Tamamlanan kanalları temizle
+                cls._cleanup_finished_channels()
+                
+                # Eğer bu ses çakışmaması gereken bir ses ise, önceki örneği durdur
+                if sound_name in cls.NON_OVERLAPPING_SOUNDS:
+                    if sound_name in cls._active_sound_channels:
+                        channel = cls._active_sound_channels[sound_name]
+                        if channel and channel.get_busy():
+                            channel.stop()
+                
+                # Yeni kanalda çal
+                channel = sound.play()
+                
+                # Çakışmaması gereken sesler için kanalı takip et
+                if sound_name in cls.NON_OVERLAPPING_SOUNDS:
+                    cls._active_sound_channels[sound_name] = channel
+                # Çakışabilen sesler için kanalı takip etme (çoklu örnekler olabilir)
             except Exception as e:
                 print(f"Ses çalınamadı: {sound_name} - {e}")
     
@@ -265,6 +304,12 @@ class Audio:
         """Tüm ses efektlerini durdur"""
         for sound_name in list(cls._loop_sounds.keys()):
             cls.stop_sound_loop(sound_name)
+        # Aktif ses kanallarını temizle
+        for sound_name in list(cls._active_sound_channels.keys()):
+            channel = cls._active_sound_channels[sound_name]
+            if channel and channel.get_busy():
+                channel.stop()
+        cls._active_sound_channels.clear()
     
     @classmethod
     def play_music(cls, path, loops=-1):
