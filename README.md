@@ -18,6 +18,8 @@ Proje, pygame kütüphanesi kullanılarak geliştirilmiştir.
 
 Tanıtım videosu (2 dakika): [https://youtu.be/M1T_XHGh2f4](https://youtu.be/M1T_XHGh2f4)
 
+Bu proje, Iskenderun Teknik Üniversitesi Bilgisayar Mühendisliği bölümünde verilen MÜHENDİSLİKTE BİLGİSAYAR UYGULAMALARI I dersi kapsamında geliştirilmiştir.
+
 ---
 
 ## 📋 İçindekiler
@@ -435,19 +437,6 @@ BiyikBeyinCilesi/
 ## 📄 Lisans
 
 Bu proje eğitim amaçlı geliştirilmiştir.
-
----
-
-
-## 👨‍💻 Geliştirici
-
-- **Morteza Rezaeı**
-
-Proje, pygame kütüphanesi kullanılarak geliştirilmiştir.
-
-Tanıtım videosu (2 dakika): [https://youtu.be/M1T_XHGh2f4](https://youtu.be/M1T_XHGh2f4)
-
-**Not**: Bu README dosyası projeyi sunmak için hazırlanmıştır. Tüm kurulum adımları ve kullanım talimatları detaylı olarak açıklanmıştır.
 
 ---
 
